@@ -1,8 +1,6 @@
-from flask import Flask, session, redirect, url_for, escape, request, render_template
-from flask import Response
+from flask import Flask, session, redirect, url_for, escape, request, render_template, Response, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.wsgi import LimitedStream
-from flask import jsonify
+import StreamConsumingMiddleware as stream
 
 
 app = Flask(__name__)
@@ -14,29 +12,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@127.0.0.1/loadlev
 
 db = SQLAlchemy(app)
 
-class StreamConsumingMiddleware(object):
-
-    def __init__(self, app):
-        self.app = app
-
-    def __call__(self, environ, start_response):
-        stream = LimitedStream(environ['wsgi.input'],
-                               int(environ['CONTENT_LENGTH'] or 0))
-        environ['wsgi.input'] = stream
-        app_iter = self.app(environ, start_response)
-        try:
-            stream.exhaust()
-            for event in app_iter:
-                yield event
-        finally:
-            if hasattr(app_iter, 'close'):
-                app_iter.close()
-
-app.wsgi_app = StreamConsumingMiddleware(app.wsgi_app)
-
-
-
-		
+app.wsgi_app = stream.StreamConsumingMiddleware(app.wsgi_app)
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -62,8 +38,6 @@ class Objects(db.Model):
     def __init__(self, maps_id=None, type=None, x=0, y=0):
         self.maps_id = maps_id
         self.type = type
-		self.x = x
-		self.y = y
 
 def check_login(l,p):    
     admin = Users.query.filter_by(login=l, password=p).first()
