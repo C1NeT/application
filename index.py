@@ -1,6 +1,7 @@
 from flask import Flask, session, redirect, url_for, escape, request, render_template, Response, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import StreamConsumingMiddleware as stream
+import json
 
 
 app = Flask(__name__)
@@ -13,6 +14,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@127.0.0.1/loadlev
 db = SQLAlchemy(app)
 
 app.wsgi_app = stream.StreamConsumingMiddleware(app.wsgi_app)
+
+class Object:
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -61,6 +67,23 @@ def index(name=None):
     
     return render_template('index.html', name=maps)
 
+	
+@app.route('/getobjects/<int:map_id>', methods=['POST'])
+def get_objects(map_id):
+	if request.method == 'POST':
+		data = Objects.query.filter_by(maps_id=map_id).all()
+		json_res = []
+		for result in data:
+			res = {
+				'type' : result.type,
+				'x' : result.x,
+				'y' : result.y
+			}
+			json_res.append(res)
+		resp = Response(json_res, status=200, mimetype='application/json')
+		resp = jsonify(json_res)
+		return resp
+
 
 @app.route('/scene/<int:post_id>', methods=['GET', 'POST'])
 def show_scene(post_id):
@@ -77,9 +100,18 @@ def show_scene(post_id):
 		resp = Response(data, status=200, mimetype='application/json')
 		resp = jsonify(data)
 		return resp
-
-
+		
     return render_template('scene.html', post_id=post_id)
+
+
+@app.route('/clear/<int:id>', methods=['GET'])
+def clear_objects(id):
+	data = Objects.query.filter_by(maps_id=id).all()
+	for result in data:
+		db.session.delete(result)
+		
+	db.session.commit()
+	return render_template('scene.html', post_id=id)
 
 
 

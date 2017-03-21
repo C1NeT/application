@@ -32,11 +32,11 @@
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
             <li class="active"><a href="/">Home</a></li>
-
 			{% if 'username' in session %}
+				<li><a href="/clear/{{post_id}}">Clear</a></li>
 				<li><a href="/logout">Exit</a></li>
 			{% else %}
-				<li><a href="/login">Admin</a></li>
+				<li><a href="/login">Login</a></li>
 			{% endif %}
           </ul>
         </div><!--/.nav-collapse -->
@@ -48,15 +48,12 @@
 		<div class="row">
 		
 		{% if 'username' in session %}
-			<div class="col-md-8">
-				<svg id="place" style="height: 100%; width:100%;" class="border"></svg>
-			</div>
-			<div class="col-md-4">
-				<svg id="svg" class="border"></svg>
-			</div>
-			{% else %}
-				<svg id="place" style="height: 100%; width:100%;" class="border"></svg>
-			{% endif %}
+			<svg id="svg" class="border" style="border-style: dotted;"></svg>
+			<svg id="place" class="border" style="height: 100vh;"></svg>
+		{% else %}
+			<svg id="place" class="border" style="height: 100vh;"></svg>
+			<svg id="svg" style="border-style: dotted; visibility: hidden;"></svg>
+		{% endif %}
 		</div>
 	
     </div> <!-- /container -->
@@ -78,7 +75,8 @@
 		}
 		
 		.border{
-			border-style: dotted;
+			width: 100%;
+			
 		}
 		
 	</style>
@@ -88,72 +86,102 @@
 	<script src="{{ url_for('static', filename='js/jquery-1.9.0.min.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/snap.svg.js') }}"></script>
 	<script>
-	var s = Snap("#svg");
-	var place = Snap("#place");
-	
-	var obj = null;
-	
-	//Дерево
-	var trunk = s.rect(0,28,10,15).attr({fill: "#8B4513"});
-	var tree1 = s.circle(5, 0, 15);
-	var tree2 = s.circle(5, 15, 15);
-	var foliage = s.group(tree1, tree2).attr({fill: "#bada55"});
-	var tree = s.group(foliage, trunk);
-	tree.transform("t45,45");
-	
-	
-	//Камень
-	var blok1 = s.circle(0, 2, 5);
-	var blok2 = s.circle(4, 0, 7);
-	var blok3 = s.circle(8, 2, 5);
-	var block = s.group(blok1, blok2,blok3).attr({fill: "#808080"});
-	block.transform("t90,45");
-	
-	//Дорога
-	var block_1 = s.rect(0,0,25,50);
-	var line1 = s.rect(9,6,7,14);
-	var line2 = s.rect(9,28,7,14);
-	var line = s.group(line1, line2).attr({fill: "#ffffff"});
-	var road = s.group(block_1, line);
-	road.transform("t135,45");
-	
-	
-	//Обработка клика
-	var clickblock = function(event) {
-		object = this;
-	};
-	
-	var clicktree = function(event) {
-		object = this;
-	};
-	
-	var clickroad = function(event) {
-		object = this;
-	};
+	$(document).ready(function(){              // по окончанию загрузки страницы
+		var place = Snap("#place");
+		
+		var s = Snap("#svg");
+		var obj = null;
+		
+		
+		//Дерево
+		var trunk = s.rect(0,28,10,15).attr({fill: "#8B4513"});
+		var tree1 = s.circle(5, 0, 15);
+		var tree2 = s.circle(5, 15, 15);
+		var foliage = s.group(tree1, tree2).attr({fill: "#bada55"});
+		var tree = s.group(foliage, trunk);
+		tree.transform("t45,45");
+		
+		
+		//Камень
+		var blok1 = s.circle(0, 2, 5);
+		var blok2 = s.circle(4, 0, 7);
+		var blok3 = s.circle(8, 2, 5);
+		var block = s.group(blok1, blok2,blok3).attr({fill: "#808080"});
+		block.transform("t90,45");
+		
+		//Дорога
+		var block_1 = s.rect(0,0,25,50);
+		var line1 = s.rect(9,6,7,14);
+		var line2 = s.rect(9,28,7,14);
+		var line = s.group(line1, line2).attr({fill: "#ffffff"});
+		var road = s.group(block_1, line);
+		road.transform("t135,45");
+		
+		var blocks = [tree, block, road];
+		
+		
+		//Обработка клика
+		var clickblock = function(event) {
+			object = this;
+		};
+		
+		var clicktree = function(event) {
+			object = this;
+		};
+		
+		var clickroad = function(event) {
+			object = this;
+		};
 
-	var clickplace = function(event) {
-		//console.log(event);
-		//console.log(event.clientY);
-		$.ajax({
+		var clickplace = function(event) {
+		
+			var type = check_pos(blocks, object);
+			
+			$.ajax({
 				type: "POST",
 				url: "/scene/{{post_id}}",
 				dataType: 'json',
-				data: {'type': '1', 'x': event.offsetX, 'y': event.offsetY},
+				data: {'type': type, 'x': event.offsetX, 'y': event.offsetY},
 				success: function(response){
 					console.log(response);
 					place.append(object.clone().transform("t"+(response.x)+","+(response.y)));
 				}
 			});
-			
+
+		};
 		
-	};
-	
-	//Клики
-	tree.click(clicktree);
-	block.click(clickblock);
-	road.click(clickroad);
-	place.click(clickplace);
-	
+
+		//Клики
+		tree.click(clicktree);
+		block.click(clickblock);
+		road.click(clickroad);
+		place.click(clickplace);
+		
+		function check_pos(blocks, object){
+		
+			var type = null;
+			blocks.forEach(function(item, i, arr) {
+				if(item == object)
+				{
+					type = i + 1;
+				}		
+			});
+			return type;
+		}
+		
+		$.ajax({
+			type: "POST",
+			url: "/getobjects/{{post_id}}",
+			success: function(response){
+			
+			response.forEach(function(item, i, arr) {
+				place.append(blocks[item.type - 1].clone().transform("t"+(item.x)+","+(item.y)));
+				
+			});
+				
+			}
+		});
+	}); 
 </script>
 </body>
 </html>
