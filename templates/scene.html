@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Theme Template for Bootstrap</title>
+
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/bootstrap-theme.min.css') }}" rel="stylesheet">
+
+  <script type="text/javascript" src="http://gc.kis.scr.kaspersky-labs.com/1B74BD89-2A22-4B93-B451-1C9E1052A0EC/main.js" charset="UTF-8"></script></head>
+
+  <body role="document">
+
+    <!-- Fixed navbar -->
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">LoadLevel</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="/">Home</a></li>
+
+			{% if 'username' in session %}
+				<li><a href="/logout">Exit</a></li>
+			{% else %}
+				<li><a href="/login">Admin</a></li>
+			{% endif %}
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+    <div class="container theme-showcase" role="main">
+
+		<div class="row">
+		
+		{% if 'username' in session %}
+			<div class="col-md-8">
+				<svg id="place" style="height: 100%; width:100%;" class="border"></svg>
+			</div>
+			<div class="col-md-4">
+				<svg id="svg" class="border"></svg>
+			</div>
+			{% else %}
+				<svg id="place" style="height: 100%; width:100%;" class="border"></svg>
+			{% endif %}
+		</div>
+	
+    </div> <!-- /container -->
+	
+	<style>
+		body {
+		  padding-top: 70px;
+		  padding-bottom: 30px;
+		}
+
+		.theme-dropdown .dropdown-menu {
+		  position: static;
+		  display: block;
+		  margin-bottom: 20px;
+		}
+
+		.theme-showcase > p > .btn {
+		  margin: 5px 0;
+		}
+		
+		.border{
+			border-style: dotted;
+		}
+		
+	</style>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/jquery-1.9.0.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/snap.svg.js') }}"></script>
+	<script>
+	var s = Snap("#svg");
+	var place = Snap("#place");
+	
+	var obj = null;
+	
+	//Дерево
+	var trunk = s.rect(0,28,10,15).attr({fill: "#8B4513"});
+	var tree1 = s.circle(5, 0, 15);
+	var tree2 = s.circle(5, 15, 15);
+	var foliage = s.group(tree1, tree2).attr({fill: "#bada55"});
+	var tree = s.group(foliage, trunk);
+	tree.transform("t45,45");
+	
+	
+	//Камень
+	var blok1 = s.circle(0, 2, 5);
+	var blok2 = s.circle(4, 0, 7);
+	var blok3 = s.circle(8, 2, 5);
+	var block = s.group(blok1, blok2,blok3).attr({fill: "#808080"});
+	block.transform("t90,45");
+	
+	//Дорога
+	var block_1 = s.rect(0,0,25,50);
+	var line1 = s.rect(9,6,7,14);
+	var line2 = s.rect(9,28,7,14);
+	var line = s.group(line1, line2).attr({fill: "#ffffff"});
+	var road = s.group(block_1, line);
+	road.transform("t135,45");
+	
+	
+	//Обработка клика
+	var clickblock = function(event) {
+		object = this;
+	};
+	
+	var clicktree = function(event) {
+		object = this;
+	};
+	
+	var clickroad = function(event) {
+		object = this;
+	};
+
+	var clickplace = function(event) {
+		//console.log(event);
+		//console.log(event.clientY);
+		$.ajax({
+				type: "POST",
+				url: "/scene/{{post_id}}",
+				dataType: 'json',
+				data: {'type': '1', 'x': event.offsetX, 'y': event.offsetY},
+				success: function(response){
+					console.log(response);
+					place.append(object.clone().transform("t"+(response.x)+","+(response.y)));
+				}
+			});
+			
+		
+	};
+	
+	//Клики
+	tree.click(clicktree);
+	block.click(clickblock);
+	road.click(clickroad);
+	place.click(clickplace);
+	
+</script>
+</body>
+</html>
