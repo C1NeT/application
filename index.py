@@ -35,11 +35,15 @@ class Objects(db.Model):
     x = db.Column(db.Float)
     y = db.Column(db.Float)
 
-    def __init__(self, maps_id=None, type=None, x=0, y=0):
-        self.maps_id = maps_id
-        self.type = type
+    def __init__(self, maps_id=None, type=None, x = 0, y = 0):
+	    self.maps_id = maps_id
+	    self.type = type
+	    self.x = x
+	    self.y = y
+		
+		
 
-def check_login(l,p):    
+def check_login(l,p):
     admin = Users.query.filter_by(login=l, password=p).first()
     if admin is not None:
         return 1
